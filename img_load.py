@@ -24,12 +24,8 @@ class ImageData():
         fig.suptitle('Title')
         ax1.imshow(self.pil_img)
         ax2.bar(range(len(hist)), hist)
-
-
-        #c = plt.imshow(self.pil_img) #, cmap='gray')
-        #plt.colorbar(c)
-        #plt.title(title, fontweight ="bold")
-        plt.show()
+        plt.draw()
+        plt.pause(0.001)
 
     def imsave(self, filename):
         print("Saving image to: {}".format(filename))

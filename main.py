@@ -86,7 +86,7 @@ if __name__ == '__main__':
 
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--file", default="./data/SIPI/7.1.07.tiff", help="Image or Directory of Images in which to apply Equalisation")
+    parser.add_argument("--file", default="./data/SIPI/4.1.01.tiff", help="Image or Directory of Images in which to apply Equalisation")
     args = parser.parse_args()
     main(args)
     print("Done.")
