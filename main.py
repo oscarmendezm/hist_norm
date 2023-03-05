@@ -23,7 +23,6 @@ def do_eq(I, params):
 
     #Create new Image for Display
     Ieq = iml.ImageData(img_np=imgh)
-    Ieq.imshow()
 
     #Get Filename based on params and Save
     filename = params['output_file']
@@ -31,13 +30,16 @@ def do_eq(I, params):
         if v is True:
             filename+="_{}".format(k) 
     filename+=".png"
+
+    #Display and Save
+    Ieq.imshow(filename)
     Ieq.imsave(filename)
     return imgh
 
 def hist_equalise(input_filename, output_filename):
     I = iml.ImageData(input_filename)
     I.imsave(output_filename+".png") #Save as PNG
-    I.imshow()
+    I.imshow(output_filename)
 
     # Perform Global Histogram Equalisation (BW)
     params = {'colour': False,
@@ -86,7 +88,7 @@ if __name__ == '__main__':
 
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--file", default="./data/SIPI/4.1.01.tiff", help="Image or Directory of Images in which to apply Equalisation")
+    parser.add_argument("--file", default="./data/SIPI/7.1.03.tiff", help="Image or Directory of Images in which to apply Equalisation")
     args = parser.parse_args()
     main(args)
     print("Done.")
