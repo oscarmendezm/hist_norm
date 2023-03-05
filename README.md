@@ -40,4 +40,5 @@ which will find all files in the directory and attempt to apply histogram equali
 
 ## Notes
 There was little consideration given to runtime performance. The program focuses on performing an easy to understand version of the algorithms. Using numpy more efficiently, extracting the adaptive histogram equalisation to c/c++/java or even using PyTorch's GPU bindings would siginificantly improve performance.
+Similarly, there was no implementation of Contrast Limiting, which would improve the resulsting SWAHE image.
 

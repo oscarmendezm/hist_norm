@@ -21,7 +21,8 @@ class ImageData():
         #loading here to avoid unnecesary dependencies.
         import matplotlib.pyplot as plt
         fig, (ax1, ax2) = plt.subplots(1, 2)
-        fig.suptitle('Title')
+        fig.tight_layout()
+        fig.suptitle(title)
         ax1.imshow(self.pil_img)
         ax2.bar(range(len(hist)), hist)
         plt.draw()
