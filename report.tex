@@ -1,0 +1,79 @@
+\documentclass{article}
+
+% Language setting
+% Replace `english' with e.g. `spanish' to change the document language
+\usepackage[english]{babel}
+
+% Set page size and margins
+% Replace `letterpaper' with`a4paper' for UK/EU standard size
+\usepackage[a4paper,top=2cm,bottom=2cm,left=2cm,right=2cm,marginparwidth=1.75cm]{geometry}
+
+% Useful packages
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+
+\title{Histogram Equalisation}
+\author{Dr. Oscar Mendez}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+
+%\section{Histogram Equalisation}
+
+Histogram equalisation is a simple image processing technique which aims to re-distribute the histogram of intensities to achieve better utilization of the full range of possible values. 
+At its core, this algorithm improves the contrast in images that appear “washed out” usually because they use a narrow band of intensity values. 
+The equalisation process allows the image to use a wider range of these values, for instance, figure \ref{fig:tank} shows an example of global histogram equalisation applied to a washed out image of a tank. In the resulting image, the contrast has been amplified at a \textit{global} level.  Applying such a transform to an image an result in increased clarity, visibility of otherwise invisible features and would facilitate certain Computer Vision applications such as edge extraction and feature extraction \& matching. 
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.30\linewidth]{./images/7.1.03.png}
+    \includegraphics[width=0.30\linewidth]{./images/7.1.03_eq.png}
+    \caption{\label{fig:tank}Example of an Image with Global Histogram Equalisation. Notice the increase in detail visible on the surrounding foliage.}
+\end{figure}
+
+\subsection{Advantages and Disadvantages}
+The process is both fast and reversible, which are two of its main advantages. 
+However, the key advantages of histogram equalisation is demonstrated by figure \ref{fig:tank}. 
+That is, Global Histogram Equalisation is extremely good at recovering detail when an image has been systematically over or under exposed. 
+As shown in figure \ref{fig:tankplots}, the equalisation can ``stretch'' the histogram of existing values to obtain a wider utilisation of the range of intensities. 
+Notice how the Cumulative Distribution Function (CDF) becomes linear, and the histogram is spread out over the entire range intensities.
+\begin{figure}
+    \centering
+    \includegraphics[width=0.30\linewidth]{./images/7.1.03.plots.png}
+    \includegraphics[width=0.30\linewidth]{./images/7.1.03_eq.png.plots.png}
+    \caption{\label{fig:tankplots}Histogram and CDF for the images in figure \ref{fig:tank}.}
+\end{figure}
+
+One important advantage of this is that it exposes detail in the image that might have been concealed. In any feature-based approach, this exposure of detail can aid in both detection and matching under the assumption the equalisation process is not significantly different from frame to frame (e.g. in video sequence). It can also be useful to introduce some level of robustness when the camera suffers momentary changes in exposure, such as when driving under a bridge. A similar improvement in performance can be obtained in photometric approaches.
+
+One important limitation is that the algorithm cannot recover values that have been clipped beyond the bit-depth of the image. An image that was dark or light enough would not necessarily benefit from this approach as most of the information is lost. Another more interesting limitation is that the algorithm cannot recover the quantisation noise between intensity bins, more explicitly, the histogram is "stretched" out and the weights re-distributed but there is little consideration for interpolation within the bounds of the histogram. This means the algorithm cannot increase the colour depth of the image, and in some cases might decrease it. Both these limitations can cause visual artifacts in the image, including visible image gradients.
+
+Perhaps the most important limitation of this approach is the algorithm applies its rescaling of intensities indiscriminately, meaning it can just as easily amplify noise present in the image by increasing the contrast of background noise. THis crates further visual artifacts which can directly interfere with the Computer Vision algorithms it intends to facilitate. Finally, a related limitation is that the equalisation is performed globally across the image. This is desireable when the whole image has a similar range of values, but can cause issues when the image contains regions with distinct distributions of values. Section \ref{sec:ahe} will discuss an improved version.
+
+\subsection{Deep Learning Implications}
+Histogram equalisation has important implications when it comes to its application to Deep Learning. 
+Deep Learning is generally more capable of making full use of low-contrast regions of an image due to its ability to learn important "features" or patters in the image. 
+This can be seen by e.g. gabor-like filters in the early layers of a CNN. 
+Histogram Equalisation can potentially interfere with this process, as it is an inherently image-adaptive process which can disturb dataset-wide distributions. 
+For example, a Deep Learning classifier can use the local contrast of a tiger's skin to differentiate it from other similar classes, such as house cats which may have a similarly striped, but less distinct, pattern.
+Histogram normalization could exagerate the contrast and make the task significantly more difficult to learn.
+
+A more generic description of the issue above is that Histogram Equalisation can result in the lack of a consistent distribution of intensities: since the approach works on each image independently, it retains the relative intensities within a single image, but can alter that across the entire dataset. 
+This fundamentally modifies the distribution of the data an will have potentially catastrophic effects on a pre-trained network, but would also cause the network difficulty during training as it can no longer rely on consistency across its intensity spectrum.
+
+A more sophisticated approach would be to estimate the required histogram CDF across an entire dataset and apply the same equalisation to every image in the dataset, as well as to every image at runtime. However, this would exacerbate some of the limitations caused by the global nature of Histogram Equalisation. A better approach is actually commonly in use, with ``ImageNet Normalisation'' values which simply remap the range 0-255 of ImageNet to -1 to 1 across the entire dataset by estimating a mean and standard deviation for each channel across the entire dataset. 
+
+
+\section{Adaptive Histogram Equalisation}\label{sec:ahe}
+As mentioned before, the global nature of the equalisation process can cause issues with non-uniform distributions across the image. A simple fix for this is to estimate an ``Adaptive'' Equalisation approach which can operate on discrete parts of an image. In its simplest form, Adaptive Histogram Equalisation (AHE) tiles the image into regions and treats each region as an independent image to Equalise. This has the advantage of enabling local computation of statistics which can enhance the contrast across parts of the image that are differently distributed. However, it can introduce artifacts due to the tiling of the image (as each section now has a different effective contrast). To avoid this, several approaches incorporate an interpolation approach to smooth the resulting image. However, a more sophisticated approach estimates the statistics locally for each pixel, enabling a smooth and adaptive equalisation.
+\subsection{Sliding Window AHE (SWAHE)}
+In its base form, SWAHE uses a window around a query pixel to estimate the equalisation parameters. As this window slides across the image, each pixel is updated with an neighbourhood-equalised value. However, this can be incredibly inefficient as we re-compute histograms for most of the patch (except the last column). A slightly more sophisticated approach simply updates the CDF: as the window slides accross the image, each step removes the ``last'' column and adds a new one. Statistics can be estimated for these columns independently and be used to update the CDF which is applied to the current pixel. 
+
+While AHE and SWAHE are sophisticated approaches, they also have important limitations. Most importantly, there is a tendency to over-amplify noise in low-contrast regions of the image. A variant of this approach aims to limit this by thresholding the histogram and therefore limiting the amplification.
+
+\section{Conclusion}
+In conclusion, Histogram Equalisation can be a powerful tool to improve the performance of CV algorithms, provided the data has specific properties. Images that have consistenly use a narrow range of values, such as washed out images, see the most improvement. At the same time, this equalisation can cause issues when applied 
+\end{document}
