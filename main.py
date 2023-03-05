@@ -66,7 +66,7 @@ def hist_equalise(input_filename, output_filename):
     #Sanity Check Error vs. OpenCV (Global BW)
     eq_cv = do_eq_cv2(I, params)
     diff = np.abs(eq_cv - eq_me)
-    print("Average Photometric Error: {}".format(np.mean(diff.flatten())))
+    print("Mean Error (vs. OpenCV): {}".format(np.mean(diff.flatten())))
 
 def main(args):
     filename = Path(args.file)
